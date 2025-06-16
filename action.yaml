@@ -1,6 +1,12 @@
 name: Setup Flutter
 description: Install Flutter SDK based on OS, arch, and version (supports stable & beta)
 
+author: GitPushPray
+
+branding:
+  icon: download
+  color: yellow
+
 inputs:
   os:
     description: Target OS (linux, macos, windows)
