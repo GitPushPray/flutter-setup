@@ -1,0 +1,74 @@
+name: Setup Flutter
+description: Install Flutter SDK based on OS, arch, and version (supports stable & beta)
+
+inputs:
+  os:
+    description: Target OS (linux, macos, windows)
+    required: false
+    default: linux
+
+  arch:
+    description: CPU architecture (x64 or arm64)
+    required: false
+    default: x64
+
+  version:
+    description: Flutter version (e.g., 3.29.3, 3.32.0-0.2.pre)
+    required: false
+    default: stable
+
+  is-beta:
+    description: Whether to use the beta release channel
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+        - name: Generate, download, and extract Flutter
+          shell: bash
+          run: |
+            CHANNEL="stable"
+            EXT="tar.xz"
+        
+            if [[ "${{ inputs.is-beta }}" == "true" ]]; then
+              CHANNEL="beta"
+            fi
+        
+            VERSION="${{ inputs.version }}"
+            OS="${{ inputs.os }}"
+            ARCH="${{ inputs.arch }}"
+        
+            if [[ "$OS" == "windows" || "$OS" == "macos" ]]; then
+              EXT="zip"
+            fi
+        
+            FILE_NAME="flutter_${OS}"
+            if [[ "$OS" == "macos" && "$ARCH" == "arm64" ]]; then
+              FILE_NAME="flutter_macos_arm64"
+            elif [[ "$OS" == "macos" && "$ARCH" == "x64" ]]; then
+              FILE_NAME="flutter_macos"
+            elif [[ "$OS" == "linux" ]]; then
+              FILE_NAME="flutter_linux"
+            elif [[ "$OS" == "windows" ]]; then
+              FILE_NAME="flutter_windows"
+            fi
+        
+            FILE_NAME="${FILE_NAME}_${VERSION}-${CHANNEL}.${EXT}"
+            DOWNLOAD_URL="https://storage.googleapis.com/flutter_infra_release/releases/${CHANNEL}/${OS}/${FILE_NAME}"
+        
+            echo "Downloading Flutter from $DOWNLOAD_URL"
+            curl -L -o flutter_sdk.${EXT} "$DOWNLOAD_URL"
+        
+            echo "Extracting Flutter SDK..."
+            if [[ "$EXT" == "zip" ]]; then
+              unzip -q flutter_sdk.zip
+            else
+              tar xf flutter_sdk.tar.xz
+            fi
+        
+            echo "$GITHUB_WORKSPACE/flutter/bin" >> $GITHUB_PATH
+
+        - name: Run Flutter Doctor
+          shell: bash
+          run: flutter doctor -v
